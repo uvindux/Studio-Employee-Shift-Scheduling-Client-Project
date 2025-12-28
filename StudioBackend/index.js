@@ -11,7 +11,12 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const MONGO = process.env.MONGODB_URI;
 
-app.use(cors());
+app.use(cors({
+          origin: [
+                    'https://studio-sand-three-39.vercel.app/',
+                    'http://localhost:5173'
+          ]
+}));
 app.use(express.json());
 
 app.use('/api/staff', staffRoutes);
