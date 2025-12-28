@@ -13,7 +13,7 @@ const MONGO = process.env.MONGODB_URI;
 
 app.use(cors({
           origin: [
-                    'https://studio-sand-three-39.vercel.app/',
+                    'https://studio-sand-three-39.vercel.app',
                     'http://localhost:5173'
           ]
 }));
