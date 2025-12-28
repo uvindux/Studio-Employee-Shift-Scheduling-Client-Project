@@ -27,50 +27,23 @@ const App: React.FC = () => {
     })();
   }, []);
 
-  // Initialize with shifts for December 2025 with strict 3 slots
-  const [shifts, setShifts] = useState<Shift[]>(() => {
-    const year = 2025;
-    const month = 11; // Month is 0-indexed, 11 = December
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const defaultShifts: Shift[] = [];
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-
-      // 1. Morning Shift: 6:30 am to 8:30 am
-      defaultShifts.push({
-        id: `dec25-${d}-mor`,
-        date: dateStr,
-        startTime: '06:30',
-        endTime: '08:30',
-        role: StaffRole.HOST
-      });
-
-      // 2. Day Shift: 8:30 am to 1:30 pm (13:30)
-      defaultShifts.push({
-        id: `dec25-${d}-day`,
-        date: dateStr,
-        startTime: '08:30',
-        endTime: '13:30',
-        role: StaffRole.HOST
-      });
-
-      // 3. Evening Shift: 2:45 pm (14:45) to 6:30 pm (18:30)
-      defaultShifts.push({
-        id: `dec25-${d}-eve`,
-        date: dateStr,
-        startTime: '14:45',
-        endTime: '18:30',
-        role: StaffRole.HOST
-      });
-    }
-    return defaultShifts;
-  });
+  // Start with no shifts. User will generate shifts via the UI.
+  const [shifts, setShifts] = useState<Shift[]>([]);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'shifts' | 'staff'>('shifts');
+
+  const handleShiftsGenerated = (range: { start: string; end: string }) => {
+    // Focus the calendar area so the user immediately sees the generated slots
+    try {
+      const el = document.getElementById('calendar');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      // ignore
+    }
+  };
 
   const handleGenerateSchedule = useCallback(async () => {
     if (shifts.length === 0) {
@@ -183,9 +156,13 @@ const App: React.FC = () => {
           </div>
 
           {/* Panel Content */}
-          <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
+          <div id="left-panel-scroll" className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
             {activeTab === 'shifts' ? (
-              <ShiftInput shifts={shifts} setShifts={setShifts} />
+              <ShiftInput shifts={shifts} setShifts={setShifts} onGenerate={(r)=>{
+                // ensure left panel shows overview
+                try { const left = document.getElementById('left-panel-scroll'); if (left) left.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e){}
+                handleShiftsGenerated(r);
+              }} />
             ) : (
               <StaffInput staff={staff} setStaff={setStaff} />
             )}
