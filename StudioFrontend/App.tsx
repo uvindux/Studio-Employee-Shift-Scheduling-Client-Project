@@ -158,9 +158,9 @@ const App: React.FC = () => {
           {/* Panel Content */}
           <div id="left-panel-scroll" className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
             {activeTab === 'shifts' ? (
-              <ShiftInput shifts={shifts} setShifts={setShifts} onGenerate={(r)=>{
+              <ShiftInput shifts={shifts} setShifts={setShifts} onGenerate={(r) => {
                 // ensure left panel shows overview
-                try { const left = document.getElementById('left-panel-scroll'); if (left) left.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e){}
+                try { const left = document.getElementById('left-panel-scroll'); if (left) left.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { }
                 handleShiftsGenerated(r);
               }} />
             ) : (
