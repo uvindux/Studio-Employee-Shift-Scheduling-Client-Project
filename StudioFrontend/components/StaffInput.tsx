@@ -62,40 +62,6 @@ export const StaffInput: React.FC<StaffInputProps> = ({ staff, setStaff }) => {
         <Users className="w-5 h-5 mr-2 text-secondary" />
         Staff Availability
       </h2>
-
-      <div className="bg-gray-50 p-4 rounded-lg mb-6 space-y-3">
-        <div className="grid grid-cols-1 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Host Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Sarah Smith"
-              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-secondary focus:border-transparent"
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-            Constraints & Availability
-          </label>
-          <textarea
-            value={constraints}
-            onChange={(e) => setConstraints(e.target.value)}
-            placeholder="e.g. Can only work weekends, max 20 hours/week. Needs Tuesdays off."
-            className="w-full p-2 border border-gray-300 rounded-md text-sm h-20 focus:ring-2 focus:ring-secondary focus:border-transparent"
-          />
-          <p className="text-[10px] text-gray-400 mt-1">Describe availability in natural language.</p>
-        </div>
-        <button
-          onClick={addStaff}
-          className="w-full bg-secondary text-white p-2 rounded-md text-sm font-medium hover:bg-emerald-600 transition flex justify-center items-center"
-        >
-          <UserPlus className="w-4 h-4 mr-2" /> Add Host
-        </button>
-      </div>
-
       <div className="flex-1 overflow-y-auto">
         {staff.length === 0 ? (
           <div className="text-center text-gray-400 py-8 text-sm">No staff added yet.</div>
@@ -132,6 +98,41 @@ export const StaffInput: React.FC<StaffInputProps> = ({ staff, setStaff }) => {
       <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500 text-right">
         Total Staff: {staff.length}
       </div>
+
+      <div className="bg-gray-50 p-4 rounded-lg mb-6 space-y-3">
+        <div className="grid grid-cols-1 gap-3">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Host Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Sarah Smith"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-secondary focus:border-transparent"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+            Constraints & Availability
+          </label>
+          <textarea
+            value={constraints}
+            onChange={(e) => setConstraints(e.target.value)}
+            placeholder="e.g. Can only work weekends, max 20 hours/week. Needs Tuesdays off."
+            className="w-full p-2 border border-gray-300 rounded-md text-sm h-20 focus:ring-2 focus:ring-secondary focus:border-transparent"
+          />
+          <p className="text-[10px] text-gray-400 mt-1">Describe availability in natural language.</p>
+        </div>
+        <button
+          onClick={addStaff}
+          className="w-full bg-secondary text-white p-2 rounded-md text-sm font-medium hover:bg-emerald-600 transition flex justify-center items-center"
+        >
+          <UserPlus className="w-4 h-4 mr-2" /> Add Host
+        </button>
+      </div>
+
+      
     </div>
   );
 };
