@@ -9,28 +9,23 @@ interface ScheduleCalendarProps {
 }
 
 export const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({ shifts, staff }) => {
-  // Determine the month/year range based on shifts
-  const { startOfMonth, daysInMonth, monthLabel, emptyDays } = useMemo(() => {
-    if (shifts.length === 0) {
-      const now = new Date();
-      return { startOfMonth: now, daysInMonth: 30, monthLabel: "No Shifts Scheduled", emptyDays: 0 };
-    }
+  // Determine all months with shifts
+  const months = useMemo(() => {
+    if (shifts.length === 0) return [];
 
-    // Find earliest shift to determine month context
-    const sortedDates = shifts.map(s => new Date(s.date).getTime()).sort();
-    const firstShiftDate = new Date(sortedDates[0]);
+    const monthSet = new Set<string>();
+    shifts.forEach(s => {
+      const date = new Date(s.date);
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      monthSet.add(key);
+    });
 
-    const year = firstShiftDate.getFullYear();
-    const month = firstShiftDate.getMonth();
-
-    const startOfMonth = new Date(year, month, 1);
-    const endOfMonth = new Date(year, month + 1, 0);
-    const daysInMonth = endOfMonth.getDate();
-    const emptyDays = startOfMonth.getDay(); // 0 = Sunday
-
-    const monthLabel = startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-    return { startOfMonth, daysInMonth, monthLabel, emptyDays };
+    return Array.from(monthSet)
+      .sort()
+      .map(key => {
+        const [year, month] = key.split('-').map(Number);
+        return { year, month };
+      });
   }, [shifts]);
 
   // Group shifts by date
@@ -50,88 +45,117 @@ export const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({ shifts, staf
   }, [shifts]);
 
   // Helper to get staff details
-  const getStaff = (id?: string) => staff.find(s => s.id === id);
-
-  const renderDays = () => {
-    const days = [];
-
-    // Empty slots for start of month
-    for (let i = 0; i < emptyDays; i++) {
-      days.push(<div key={`empty-${i}`} className="bg-gray-50/30 min-h-[140px] border-b border-r border-gray-100"></div>);
+  const getStaff = (id?: string) => {
+    if (!id) return undefined;
+    const found = staff.find(s => s.id === id);
+    if (!found) {
+      console.warn(`Staff ID not found: "${id}". Available IDs:`, staff.map(s => s.id));
     }
+    return found;
+  };
 
-    // Actual days
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateObj = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth(), d);
-      const year = dateObj.getFullYear();
-      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const day = String(d).padStart(2, '0');
-      const localDateStr = `${year}-${month}-${day}`;
+  // Render a single month calendar
+  const renderMonth = (year: number, monthNum: number) => {
+    const startOfMonth = new Date(year, monthNum, 1);
+    const endOfMonth = new Date(year, monthNum + 1, 0);
+    const daysInMonth = endOfMonth.getDate();
+    const emptyDays = startOfMonth.getDay();
+    const monthLabel = startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-      const dayShifts = shiftsByDate[localDateStr] || [];
-      const isToday = new Date().toISOString().split('T')[0] === localDateStr;
+    const renderDays = () => {
+      const days = [];
 
-      // We expect 3 shifts usually. Let's map them to Morning/Day/Evening if possible for coloring
-      const getSlotLabel = (start: string) => {
-        if (start === '06:30') return { label: 'M', color: 'bg-blue-100 text-blue-800' };
-        if (start === '08:30') return { label: 'D', color: 'bg-orange-100 text-orange-800' };
-        if (start === '14:45') return { label: 'E', color: 'bg-indigo-100 text-indigo-800' };
-        return { label: '?', color: 'bg-gray-100 text-gray-800' };
-      };
+      // Empty slots for start of month
+      for (let i = 0; i < emptyDays; i++) {
+        days.push(<div key={`empty-${i}`} className="bg-gray-50/30 min-h-[120px] border-b border-r border-gray-100"></div>);
+      }
 
-      days.push(
-        <div key={d} className={`bg-white min-h-[160px] border-b border-r border-gray-100 p-2 relative hover:bg-gray-50 transition flex flex-col ${isToday ? 'bg-indigo-50/10 ring-1 ring-inset ring-indigo-100' : ''}`}>
-          <div className={`text-sm font-bold mb-2 flex justify-between items-center ${isToday ? 'text-primary' : 'text-gray-700'}`}>
-            <span>{d}</span>
-          </div>
+      // Actual days
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateObj = new Date(year, monthNum, d);
+        const dateStr = dateObj.toISOString().split('T')[0];
 
-          <div className="flex-1 flex flex-col gap-1.5">
-            {dayShifts.map(shift => {
-              const assignedStaff = getStaff(shift.assignedStaffId);
-              const { label, color } = getSlotLabel(shift.startTime);
+        const dayShifts = shiftsByDate[dateStr] || [];
+        const isToday = new Date().toISOString().split('T')[0] === dateStr;
 
-              return (
-                <div
-                  key={shift.id}
-                  className="flex items-center gap-2 overflow-hidden"
-                  title={`${shift.startTime} - ${shift.endTime}`}
-                >
-                  <span className={`flex-shrink-0 w-5 h-5 flex items-center justify-center text-[9px] font-bold rounded ${color}`}>
-                    {label}
-                  </span>
+        const getSlotLabel = (start: string) => {
+          if (start === '06:30') return { label: 'M', color: 'bg-blue-100 text-blue-800' };
+          if (start === '08:30') return { label: 'D', color: 'bg-orange-100 text-orange-800' };
+          if (start === '14:45') return { label: 'E', color: 'bg-indigo-100 text-indigo-800' };
+          return { label: '?', color: 'bg-gray-100 text-gray-800' };
+        };
 
-                  <div className={`flex-1 text-xs truncate py-0.5 px-1.5 rounded border ${assignedStaff ? 'bg-white border-gray-100 text-gray-800 font-medium shadow-sm' : 'bg-red-50 border-red-100 text-red-400 italic'}`}>
-                    {assignedStaff ? assignedStaff.name : 'Unassigned'}
+        days.push(
+          <div key={d} className={`bg-white min-h-[120px] border-b border-r border-gray-100 p-1.5 relative hover:bg-gray-50 transition flex flex-col ${isToday ? 'bg-indigo-50/10 ring-1 ring-inset ring-indigo-100' : ''}`}>
+            <div className={`text-xs font-bold mb-1 ${isToday ? 'text-primary' : 'text-gray-700'}`}>
+              {d}
+            </div>
+
+            <div className="flex-1 flex flex-col gap-1">
+              {dayShifts.map(shift => {
+                const assignedStaff = getStaff(shift.assignedStaffId);
+                const { label, color } = getSlotLabel(shift.startTime);
+
+                return (
+                  <div key={shift.id} className="flex items-center gap-1 overflow-hidden">
+                    <span className={`flex-shrink-0 w-4 h-4 flex items-center justify-center text-[8px] font-bold rounded ${color}`}>
+                      {label}
+                    </span>
+                    <div className={`flex-1 text-[11px] truncate py-0.5 px-1 rounded border ${assignedStaff ? 'bg-white border-gray-100 text-gray-700 font-medium shadow-sm' : 'bg-red-50 border-red-100 text-red-400 italic'}`}>
+                      {assignedStaff ? assignedStaff.name : 'Unassigned'}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-            {dayShifts.length === 0 && (
-              <div className="flex-1 flex items-center justify-center opacity-30">
-                <div className="h-full w-px bg-gray-300 mx-auto"></div>
-              </div>
-            )}
+              {dayShifts.length === 0 && (
+                <div className="flex-1 flex items-center justify-center opacity-20">
+                  <div className="h-full w-px bg-gray-300 mx-auto"></div>
+                </div>
+              )}
+            </div>
           </div>
+        );
+      }
+      return days;
+    };
+
+    return (
+      <div key={`${year}-${monthNum}`} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+        <div className="p-3 border-b border-gray-200 bg-white">
+          <h3 className="text-sm font-bold text-gray-900">{monthLabel}</h3>
         </div>
-      );
-    }
-    return days;
+        <div className="grid grid-cols-7 bg-gray-50 text-[9px] font-bold text-gray-400 tracking-wider text-center py-1 border-b border-gray-200">
+          <div>SUN</div>
+          <div>MON</div>
+          <div>TUE</div>
+          <div>WED</div>
+          <div>THU</div>
+          <div>FRI</div>
+          <div>SAT</div>
+        </div>
+        <div className="grid grid-cols-7 bg-gray-100 gap-px">
+          {renderDays()}
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div id="calendar" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200 bg-white flex justify-between items-center">
-        <div className="flex items-center gap-3">
+    <div id="calendar" className="bg-gray-50/50 rounded-xl overflow-hidden flex flex-col h-full">
+      {/* Header */}
+      <div className="bg-white p-4 shadow-sm border-b border-gray-200">
+        <div className="flex items-center gap-3 mb-3">
           <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">{monthLabel}</h2>
+            <h2 className="text-lg font-bold text-gray-900">Schedule Overview</h2>
             <p className="text-xs text-gray-500">Staff Assignments</p>
           </div>
         </div>
-        <div className="flex gap-4 text-xs font-medium">
+
+        <div className="flex gap-4 text-xs font-medium flex-wrap">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-blue-400"></span>
             <span className="text-gray-600">Morning</span>
@@ -146,18 +170,20 @@ export const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({ shifts, staf
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-7 bg-gray-50 text-[10px] font-bold text-gray-400 tracking-wider text-center py-2 border-b border-gray-200">
-        <div>SUN</div>
-        <div>MON</div>
-        <div>TUE</div>
-        <div>WED</div>
-        <div>THU</div>
-        <div>FRI</div>
-        <div>SAT</div>
-      </div>
-      <div className="grid grid-cols-7 bg-gray-100 gap-px border-b border-gray-200">
-        {renderDays()}
+
+      {/* Calendars Grid */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {months.length === 0 ? (
+          <div className="text-center text-gray-400 py-16">
+            <p className="text-sm">No shifts scheduled</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
+            {months.map(({ year, month }) => renderMonth(year, month))}
+          </div>
+        )}
       </div>
     </div>
   );
 };
+
