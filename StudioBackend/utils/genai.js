@@ -1,7 +1,9 @@
 import { GoogleGenAI } from '@google/genai';
+import dotenv from "dotenv";
+dotenv.config();
 
 const genAI = new GoogleGenAI({
-          apiKey: "AIzaSyBrb1JP6bm27y-jjDdIKWDIz24Z7x9n-0s"
+          apiKey: process.env.GEMINI_API_KEY,
 });
 
 export async function generateSchedule(shifts, staff) {
